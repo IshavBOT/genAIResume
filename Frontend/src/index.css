@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* Explicit content sources so Tailwind v4 scans all templates */
+@source "../index.html";
+@source "./**/*.{js,jsx,ts,tsx}";
+
+@layer base {
+    html {
+        @apply h-full;
+    }
+
+    body {
+        @apply min-h-full w-full bg-white text-gray-900 antialiased;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #root {
+        @apply min-h-full w-full;
+    }
+
+    button {
+        font: inherit;
+    }
+
+    a {
+        @apply text-inherit;
+    }
+}
