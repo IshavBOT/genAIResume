@@ -9,7 +9,7 @@ app.use(cookieParser())
 app.use(cors({
     origin: [
         "http://localhost:5173",
-        "https://gen-ai-resume-kappa.vercel.app"
+        "gen-ai-resume-git-main-ishav-manavs-projects.vercel.app"
     ],
     credentials: true
 }))
