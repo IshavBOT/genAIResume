@@ -5,6 +5,11 @@ const tokenBlacklistModel = require("../models/blacklist.model")
 
 async function authUser(req, res, next) {
 
+    console.log("Cookies received:", req.cookies)
+    console.log("Cookies:", req.cookies)
+    console.log("Token:", req.cookies.token)
+    console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET)
+
     const token = req.cookies.token
 
     if (!token) {
@@ -16,6 +21,8 @@ async function authUser(req, res, next) {
     const isTokenBlacklisted = await tokenBlacklistModel.findOne({
         token
     })
+
+    console.log("Blacklisted:", !!isTokenBlacklisted)
 
     if (isTokenBlacklisted) {
         return res.status(401).json({
@@ -32,8 +39,10 @@ async function authUser(req, res, next) {
 
     } catch (err) {
 
+        console.error("[Auth] JWT verification failed:", err)
+
         return res.status(401).json({
-            message: "Invalid token."
+            message: err.message || "Invalid token."
         })
     }
 
