@@ -1,7 +1,8 @@
 const { GoogleGenAI } = require("@google/genai")
 const { z } = require("zod")
 const { zodToJsonSchema } = require("zod-to-json-schema")
-const puppeteer = require("puppeteer")
+const puppeteer = require("puppeteer-core")
+const chromium = require("@sparticuz/chromium")
 const { withTimeout } = require("../utils/timeout.util")
 const { resumeSchema } = require("../schemas/resume.schema")
 const { generateResumeHTML } = require("./resumeTemplate.service")
@@ -79,15 +80,50 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
     }
 }
 
+async function getBrowserLaunchOptions() {
+    if (process.env.RENDER === "true") {
+        return {
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless
+        }
+    }
 
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return {
+            headless: true,
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
+        }
+    }
+
+    const localChromePaths = {
+        win32: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        darwin: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        linux: "/usr/bin/google-chrome"
+    }
+
+    return {
+        headless: true,
+        executablePath: localChromePaths[process.platform] || localChromePaths.linux
+    }
+}
 
 async function generatePdfFromHtml(htmlContent) {
     console.log("[AI] Before launching Puppeteer for PDF generation")
 
-    const browser = await puppeteer.launch()
-    const page = await browser.newPage()
+    let browser
 
     try {
+        const launchOptions = await getBrowserLaunchOptions()
+        browser = await puppeteer.launch(launchOptions)
+    } catch (err) {
+        console.error("[PDF] Browser launch failed:", err)
+        throw err
+    }
+
+    try {
+        const page = await browser.newPage()
         await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
         const pdfBuffer = await page.pdf({
@@ -102,7 +138,9 @@ async function generatePdfFromHtml(htmlContent) {
         console.log("[AI] Resume PDF generated via Puppeteer")
         return pdfBuffer
     } finally {
-        await browser.close()
+        if (browser) {
+            await browser.close()
+        }
     }
 }
 
